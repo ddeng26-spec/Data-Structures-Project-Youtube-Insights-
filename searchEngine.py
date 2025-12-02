@@ -72,6 +72,13 @@ class YTSearch: # Overarching class. All methods / data structures for project c
     def __init__(self):
         self.history = {}
         self.bst = None
+        # We use a 'set' because checking "if word in set" is faster than a list - hashing the word is O(1) instead of O(N)
+        self.STOP_WORDS = {
+            "a", "the", "and", "or", "but", "is", "are", "was", "were",
+            "of", "in", "on", "at", "to", "for", "with", "by", "from",
+            "vs", "how", "what", "why", "who", "i", "my", "me", "it",
+            "this"
+        }
 
 
     def search(self, text): # creates a search. Splits up search string into only words then updates the self.history table with new frequencies
@@ -83,6 +90,8 @@ class YTSearch: # Overarching class. All methods / data structures for project c
             text = text.replace(punctuation, "")
         words = text.split()
         for word in words:
+            if word in self.STOP_WORDS: #if the word is mentioned in the set, then we skip
+                continue
             if word in self.history:
                 self.history[word] += 1
             else:
@@ -93,7 +102,6 @@ class YTSearch: # Overarching class. All methods / data structures for project c
         for word in self.history:
             tree.insert(word, self.history[word])
         self.bst = tree
-
 
 
     def findMin(self):
