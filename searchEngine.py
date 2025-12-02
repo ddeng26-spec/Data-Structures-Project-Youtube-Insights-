@@ -30,38 +30,11 @@ def clean_youtube_search_history(input_file, output_file):
         if line.startswith("Searched for"):
             # Remove "Searched for" prefix
             search_term = line[14:].strip()
-
-            # Get the timestamp from the next line
-            if i + 1 < len(lines):
-                timestamp_line = lines[i + 1].strip().strip('"')
-
-                # Clean up special characters
-                timestamp_clean = timestamp_line.replace('â€¯', ' ').replace(' PST', '').strip()
-
-                # Parse datetime
-                try:
-                    dt = pd.to_datetime(timestamp_clean) # Using pandas to create datetime object which stores date and time info
-
-                    # Store the data
-                    search_terms.append(search_term)
-                    dates.append(dt.date()) # Using dt.date() to extract only the date part
-                    times.append(dt.time()) # Using dt.time() to extract only the time part
-                except:
-                    # Keep term even if date fails
-                    search_terms.append(search_term)
-                    dates.append(None)
-                    times.append(None)
-            else:
-                 search_terms.append(search_term)
-                 dates.append(None)
-                 times.append(None)
         i += 1
 
     # Create DataFrame
     cleaned_df = pd.DataFrame({
         'search_term': search_terms,
-        'date': dates,
-        'time': times
     })
 
     cleaned_df.to_csv(output_file, index=False)
