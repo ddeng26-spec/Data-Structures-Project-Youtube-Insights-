@@ -6,13 +6,16 @@ import pandas as pd
 def clean_youtube_search_history(input_file, output_file):
     
     # Read the raw CSV file
-    with open(input_file, 'r', encoding='utf-8') as file:
-        lines = []
-        lines = file.readlines() 
-    #with - context manager to ensure file is properly opened and closed
-    #open - function to open the file (input_file) in read mode ('r') with UTF-8 encoding (Standard text for Computers)
-    #readlines - method to read all lines and store them in a list 
-    
+    try:
+        with open(input_file, 'r', encoding='utf-8') as file:
+            lines = file.readlines() 
+        #with - context manager to ensure file is properly opened and closed
+        #open - function to open the file (input_file) in read mode ('r') with UTF-8 encoding (Standard text for Computers)
+        #readlines - method to read all lines and store them in a list 
+    except FileNotFoundError:
+        print(f"Error: Could not find {input_file}. Make sure the file exists.")
+        return pd.DataFrame()
+
     # Lists to store cleaned data
     search_terms = []
     dates = []
@@ -35,14 +38,23 @@ def clean_youtube_search_history(input_file, output_file):
                 # Clean up special characters
                 timestamp_clean = timestamp_line.replace('â€¯', ' ').replace(' PST', '').strip()
                 
-
                 # Parse datetime
-                dt = pd.to_datetime(timestamp_clean) # Using pandas to create datetime object which stores date and time info
-                
-                # Store the data
-                search_terms.append(search_term)
-                dates.append(dt.date()) # Using dt.date() to extract only the date part 
-                times.append(dt.time()) # Using dt.time() to extract only the time part 
+                try:
+                    dt = pd.to_datetime(timestamp_clean) # Using pandas to create datetime object which stores date and time info
+                    
+                    # Store the data
+                    search_terms.append(search_term)
+                    dates.append(dt.date()) # Using dt.date() to extract only the date part 
+                    times.append(dt.time()) # Using dt.time() to extract only the time part 
+                except:
+                    # Keep term even if date fails
+                    search_terms.append(search_term)
+                    dates.append(None)
+                    times.append(None)
+            else:
+                 search_terms.append(search_term)
+                 dates.append(None)
+                 times.append(None)
         i += 1
     
     # Create DataFrame
@@ -56,11 +68,6 @@ def clean_youtube_search_history(input_file, output_file):
     return cleaned_df
 
 
-input_file = 'search-history.csv'
-output_file = 'cleaned_youtube_search_history.csv'
-df = clean_youtube_search_history(input_file, output_file)
-
-
 class YTSearch: # Overarching class. All methods / data structures for project can be accessed through this.
     def __init__(self):
         self.history = {}
@@ -68,6 +75,9 @@ class YTSearch: # Overarching class. All methods / data structures for project c
 
 
     def search(self, text): # creates a search. Splits up search string into only words then updates the self.history table with new frequencies
+        if not isinstance(text, str):
+            return
+
         text = text.lower()
         for punctuation in ',.?;":!-':
             text = text.replace(punctuation, "")
@@ -87,44 +97,36 @@ class YTSearch: # Overarching class. All methods / data structures for project c
     
 
     def findMin(self):
-        words = []
-        minVal = 100000
-        for word in self.history:
-            if self.history[word] == minVal:
-                words.append(word)
-            elif self.history[word] < minVal:
-                words = [word]
-                minVal = self.history[word]
+        if not self.history: return [], 0
+        
+        minVal = min(self.history.values())
+        words = [word for word, count in self.history.items() if count == minVal]
         
         return words, minVal
     
     def findMax(self):
-        words = []
-        maxVal = 0
-        for word in self.history:
-            if self.history[word] == maxVal:
-                words.append(word)
-            elif self.history[word] > maxVal:
-                words = [word]
-                maxVal = self.history[word]
+        if not self.history: return [], 0
+
+        maxVal = max(self.history.values())
+        words = [word for word, count in self.history.items() if count == maxVal]
         
         return words, maxVal
         
 
     def findAverage(self):
-        sum = 0
+        if len(self.history) == 0: return 0
+        sum_val = sum(self.history.values())
         count = len(self.history)
-        for word in self.history:
-            sum += self.history[word]
-        return sum / count
+        return sum_val / count
     
     def findStdDev(self):
-        avg = self.findAverage()
         count = len(self.history)
-        sum = 0
+        if count < 2: return 0
+        avg = self.findAverage()
+        sum_val = 0
         for word in self.history:
-            sum += ((self.history[word] - avg)**2)
-        placeholder = sum / (count - 1)
+            sum_val += ((self.history[word] - avg)**2)
+        placeholder = sum_val / (count - 1)
         return math.sqrt(placeholder)
     
     def frequency_by_word_length(self):
@@ -159,6 +161,8 @@ class YTSearch: # Overarching class. All methods / data structures for project c
         return None
     
     def summary(self):
+        self.createBST() 
+
         num_words = len(self.history)
         min_freq_words, min_freq = self.findMin()
         max_freq_words, max_freq = self.findMax()
@@ -171,6 +175,11 @@ class YTSearch: # Overarching class. All methods / data structures for project c
         print(f"The following words {max_freq_words} appeared the most with frequency: {max_freq}")
         print(f"The Average Frequency of Words Searched: {avg_freq}")
         print(f"The Standard Deviation from the Average: {std_dev}")
+        
+        print("\n--- Top 10 Trending Keywords ---")
+        top_trends = self.bst.get_top_k(10)
+        for rank, (word, count) in enumerate(top_trends, 1):
+            print(f"#{rank}: {word} ({count} searches)")
         print()
 
 
@@ -185,7 +194,8 @@ class Node:
 
     def insert(self, word, value):
         if self.word == word:
-            raise Exception("Word already in tree")
+            # Raise exception removed to handle duplicates gracefully from CSV
+            return 
         elif self.value > value:
             if self.left:
                 self.left.insert(word, value)
@@ -203,6 +213,15 @@ class Node:
             print(f"{currentNode.word}:{currentNode.value}")
             self.inorder(currentNode.right)
 
+    def reverse_inorder(self, node, counter, limit, results):
+        if node is None or counter[0] >= limit:
+            return
+        self.reverse_inorder(node.right, counter, limit, results)
+        if counter[0] < limit:
+            results.append((node.word, node.value))
+            counter[0] += 1
+        self.reverse_inorder(node.left, counter, limit, results)
+
 
 class BST:
     def __init__(self):
@@ -218,13 +237,23 @@ class BST:
         if self.root:
             self.root.inorder(self.root)
 
-yt = YTSearch() # Sample usage
-
-# Process each search individually
-for search_term in df['search_term']:
-    yt.search(search_term)
-
-yt.summary()
-    
+    def get_top_k(self, k):
+        results = []
+        counter = [0] # Mutable list to persist count across recursion frames
+        if self.root:
+            self.root.reverse_inorder(self.root, counter, k, results)
+        return results
 
 
+input_file = 'search-history.csv'
+output_file = 'cleaned_youtube_search_history.csv'
+df = clean_youtube_search_history(input_file, output_file)
+
+if not df.empty:
+    yt = YTSearch() # Sample usage
+
+    # Process each search individually
+    for search_term in df['search_term']:
+        yt.search(search_term)
+
+    yt.summary()
