@@ -14,30 +14,19 @@ def clean_youtube_search_history(input_file, output_file):
         #readlines - method to read all lines and store them in a list
     except FileNotFoundError:
         print(f"Error: Could not find {input_file}. Make sure the file exists.")
-        return pd.DataFrame()
+        return []
 
     # Lists to store cleaned data
     search_terms = []
 
     # Process the file line by line
-    i = 0
-    while i < len(lines):
-        line = lines[i].strip().strip('"')
-
-        # Look for search entries
+    for line in lines:
+        line = line.strip().strip('"')
         if line.startswith("Searched for"):
-            # Remove "Searched for" prefix
             search_term = line[14:].strip()
-        i += 1
-
-    # Create DataFrame
-    cleaned_df = pd.DataFrame({
-        'search_term': search_terms,
-    })
-
-    cleaned_df.to_csv(output_file, index=False)
-    return cleaned_df
-
+            search_terms.append(search_term)
+    
+    return search_terms  
 
 class YTSearch: # Overarching class. All methods / data structures for project can be accessed through this.
     def __init__(self):
@@ -226,13 +215,13 @@ class BST:
 
 input_file = 'search-history.csv'
 output_file = 'cleaned_youtube_search_history.csv'
-df = clean_youtube_search_history(input_file, output_file)
+search_terms = clean_youtube_search_history(input_file, output_file)
 
-if not df.empty:
+if search_terms:
     yt = YTSearch() # Sample usage
 
     # Process each search individually
-    for search_term in df['search_term']:
+    for search_term in search_terms:
         yt.search(search_term)
 
     yt.summary()
