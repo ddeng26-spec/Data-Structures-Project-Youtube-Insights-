@@ -1,5 +1,64 @@
 import matplotlib.pyplot as plt
 import math
+import pandas as pd
+
+
+def clean_youtube_search_history(input_file, output_file):
+    
+    # Read the raw CSV file
+    with open(input_file, 'r', encoding='utf-8') as file:
+        lines = []
+        lines = file.readlines() 
+    #with - context manager to ensure file is properly opened and closed
+    #open - function to open the file (input_file) in read mode ('r') with UTF-8 encoding (Standard text for Computers)
+    #readlines - method to read all lines and store them in a list 
+    
+    # Lists to store cleaned data
+    search_terms = []
+    dates = []
+    times = []
+    
+    # Process the file line by line
+    i = 0
+    while i < len(lines):
+        line = lines[i].strip().strip('"')
+        
+        # Look for search entries
+        if line.startswith("Searched for"):
+            # Remove "Searched for" prefix
+            search_term = line[12:].strip()
+            
+            # Get the timestamp from the next line
+            if i + 1 < len(lines):
+                timestamp_line = lines[i + 1].strip().strip('"')
+                
+                # Clean up special characters
+                timestamp_clean = timestamp_line.replace('â€¯', ' ').replace(' PST', '').strip()
+                
+
+                # Parse datetime
+                dt = pd.to_datetime(timestamp_clean) # Using pandas to create datetime object which stores date and time info
+                
+                # Store the data
+                search_terms.append(search_term)
+                dates.append(dt.date()) # Using dt.date() to extract only the date part 
+                times.append(dt.time()) # Using dt.time() to extract only the time part 
+        i += 1
+    
+    # Create DataFrame
+    cleaned_df = pd.DataFrame({
+        'search_term': search_terms,
+        'date': dates,
+        'time': times
+    })
+    
+    cleaned_df.to_csv(output_file, index=False)
+    return cleaned_df
+
+
+input_file = 'search-history.csv'
+output_file = 'cleaned_youtube_search_history.csv'
+df = clean_youtube_search_history(input_file, output_file)
 
 
 class YTSearch: # Overarching class. All methods / data structures for project can be accessed through this.
@@ -159,13 +218,11 @@ class BST:
         if self.root:
             self.root.inorder(self.root)
 
-
-
 yt = YTSearch() # Sample usage
 
-yt.search("Minecraft Tutorial!!!")
-yt.search("How to tie a tie?")
-yt.search("How to trickshot??!:")
+# Process each search individually
+for search_term in df['search_term']:
+    yt.search(search_term)
 
 yt.summary()
     
