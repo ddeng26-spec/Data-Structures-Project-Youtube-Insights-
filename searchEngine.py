@@ -18,8 +18,6 @@ def clean_youtube_search_history(input_file, output_file):
 
     # Lists to store cleaned data
     search_terms = []
-    dates = []
-    times = []
 
     # Process the file line by line
     i = 0
