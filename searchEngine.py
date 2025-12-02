@@ -1,9 +1,8 @@
 import matplotlib.pyplot as plt
 import math
-import pandas as pd
 
 
-def clean_youtube_search_history(input_file, output_file):
+def clean_youtube_search_history(input_file):
 
     # Read the raw CSV file
     try:
@@ -214,8 +213,7 @@ class BST:
 
 
 input_file = 'search-history.csv'
-output_file = 'cleaned_youtube_search_history.csv'
-search_terms = clean_youtube_search_history(input_file, output_file)
+search_terms = clean_youtube_search_history(input_file)
 
 if search_terms:
     yt = YTSearch() # Sample usage
