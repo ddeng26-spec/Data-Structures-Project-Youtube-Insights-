@@ -5,15 +5,11 @@ import math
 def clean_youtube_search_history(input_file):
 
     # Read the raw CSV file
-    try:
-        with open(input_file, 'r', encoding='utf-8') as file:
-            lines = file.readlines()
-        #with - context manager to ensure file is properly opened and closed
-        #open - function to open the file (input_file) in read mode ('r') with UTF-8 encoding (Standard text for Computers)
-        #readlines - method to read all lines and store them in a list
-    except FileNotFoundError:
-        print(f"Error: Could not find {input_file}. Make sure the file exists.")
-        return []
+    with open(input_file, 'r', encoding='utf-8') as file:
+        lines = file.readlines()
+    #with - context manager to ensure file is properly opened and closed
+    #open - function to open the file (input_file) in read mode ('r') with UTF-8 encoding (Standard text for Computers)
+    #readlines - method to read all lines and store them in a list
 
     # Lists to store cleaned data
     search_terms = []
